@@ -1,13 +1,13 @@
-"use client";
-import TopBar from "@/components/TopBar";
-import { Sidebar, SettingsSideBar } from "@/components/index";
-import { BookmarkIcon } from "@heroicons/react/24/solid";
+'use client'
+import TopBar from '@/components/TopBar'
+import { Sidebar, MainSideBar } from '@/components/index'
+import { BookmarkIcon } from '@heroicons/react/24/solid'
 
 export default function page() {
   return (
     <>
       <Sidebar>
-        <SettingsSideBar />
+        <MainSideBar />
       </Sidebar>
       <TopBar />
       <div className="app__main">
@@ -21,5 +21,5 @@ export default function page() {
         </div>
       </div>
     </>
-  );
+  )
 }

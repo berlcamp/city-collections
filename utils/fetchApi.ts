@@ -51,7 +51,7 @@ export async function fetchLocations (filters: { filterKeyword?: string, filterS
   try {
     let query = supabase
       .from('ceedo_locations')
-      .select('*', { count: 'exact' })
+      .select('*,ceedo_sections(id,location_id,name,status)', { count: 'exact' })
       .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
 
     // Search match
@@ -129,7 +129,7 @@ export async function fetchSections (filters: { filterKeyword?: string, filterSt
   }
 }
 
-export async function fetchStalls (filters: { filterKeyword?: string, filterStatus?: string }, perPageCount: number, rangeFrom: number) {
+export async function fetchStalls (filters: { filterSection?: number | null, filterRenter?: number | null, filterStatus?: string }, perPageCount: number, rangeFrom: number) {
   try {
     let query = supabase
       .from('ceedo_stalls')
@@ -137,15 +137,18 @@ export async function fetchStalls (filters: { filterKeyword?: string, filterStat
       .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
 
 
-    // Search match
-    if (filters.filterKeyword && filters.filterKeyword !== '') {
-      // const searchQuery: string = fullTextQuery(filters.filterKeyword)
-      // query = query.textSearch('fts', searchQuery)
-      query = query.or(`name.ilike.%${filters.filterKeyword}%`)
+    // Filter section
+    if (filters.filterSection) {
+      query = query.eq('section_id', filters.filterSection)
+    }
+
+    // Filter renter
+    if (filters.filterRenter) {
+      query = query.eq('renter_id', filters.filterRenter)
     }
 
     // filter status
-    if (filters.filterStatus && filters.filterStatus !== '') {
+    if (filters.filterStatus && filters.filterStatus !== 'All') {
       query = query.eq('status', filters.filterStatus)
     }
 
@@ -174,22 +177,20 @@ export async function fetchStalls (filters: { filterKeyword?: string, filterStat
   }
 }
 
-export async function fetchRenters (filters: { filterKeyword?: string, filterStatus?: string }, perPageCount: number, rangeFrom: number) {
+export async function fetchNonRentables (filters: { filterSection?: number | null, filterStatus?: string }, perPageCount: number, rangeFrom: number) {
   try {
     let query = supabase
-      .from('ceedo_renters')
-      .select('*, stall:stall_id(name, rent, rent_type, section:section_id(name, location:location_id(name)))', { count: 'exact' })
-      .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
+      .from('ceedo_nonrentables')
+      .select('*, section:section_id(name, location:location_id(name))', { count: 'exact' })
 
-    // Search match
-    if (filters.filterKeyword && filters.filterKeyword !== '') {
-      const searchQuery: string = fullTextQuery(filters.filterKeyword)
-      query = query.textSearch('fts', searchQuery)
-      // query = query.or(`name.ilike.%${filters.filterKeyword}%`)
+
+    // Filter section
+    if (filters.filterSection) {
+      query = query.eq('section_id', filters.filterSection)
     }
 
     // filter status
-    if (filters.filterStatus && filters.filterStatus !== '') {
+    if (filters.filterStatus && filters.filterStatus !== 'All') {
       query = query.eq('status', filters.filterStatus)
     }
 
@@ -203,13 +204,91 @@ export async function fetchRenters (filters: { filterKeyword?: string, filterSta
     // Order By
     query = query.order('id', { ascending: false })
 
-    const { data: userData, error, count } = await query
+    const { data, error, count } = await query
 
     if (error) {
       throw new Error(error.message)
     }
 
-    const data: RenterTypes[] = userData
+    return { data, count }
+  } catch (error) {
+    console.error('fetch error', error)
+    return { data: [], count: 0 }
+  }
+}
+
+export async function fetchRenters (filters: { filterSection?: number | null, filterRenter?: number | null, filterStatus?: string }, perPageCount: number, rangeFrom: number) {
+  try {
+    let query = supabase
+      .from('ceedo_renters')
+      .select('*, stall:stall_id(name, rent, rent_type, section:section_id(name, location:location_id(name)))', { count: 'exact' })
+      .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
+
+    // Filter section
+    if (filters.filterSection) {
+      query = query.eq('section_id', filters.filterSection)
+    }
+
+    // Filter renter
+    if (filters.filterRenter) {
+      query = query.eq('id', filters.filterRenter)
+    }
+
+    // filter status
+    if (filters.filterStatus && filters.filterStatus !== 'All') {
+      query = query.eq('status', filters.filterStatus)
+    }
+
+    // Per Page from context
+    const from = rangeFrom
+    const to = from + (perPageCount - 1)
+
+    // Per Page from context
+    query = query.range(from, to)
+
+    // Order By
+    query = query.order('id', { ascending: false })
+
+    const { data, error, count } = await query
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return { data, count }
+  } catch (error) {
+    console.error('fetch error', error)
+    return { data: [], count: 0 }
+  }
+}
+
+export async function fetchInvoices (filters: { filterRenter?: number | null, filterStatus?: string, filterDate?: string }, perPageCount: number, rangeFrom: number) {
+  try {
+    let query = supabase
+      .from('ceedo_invoices')
+      .select('*, renter:renter_id(name)', { count: 'exact' })
+      .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
+
+    // Filter Renter
+    if (filters.filterRenter) {
+      query = query.eq('renter_id', filters.filterRenter)
+    }
+
+    // Per Page from context
+    const from = rangeFrom
+    const to = from + (perPageCount - 1)
+
+    // Per Page from context
+    query = query.range(from, to)
+
+    // Order By
+    query = query.order('id', { ascending: false })
+
+    const { data, error, count } = await query
+
+    if (error) {
+      throw new Error(error.message)
+    }
 
     return { data, count }
   } catch (error) {

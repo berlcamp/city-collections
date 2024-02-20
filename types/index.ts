@@ -73,33 +73,41 @@ export interface LocationTypes {
   id: string
   name: string
   status: string
+  ceedo_sections: SectionTypes[]
 }
 
 export interface SectionTypes {
-  id: string
+  id: number
   location_id: string
   name: string
   status: string
   location: LocationTypes
 }
 
-export interface StallTypes {
-  id: string
-  location_id: string
-  section_id: string
-  renter_id: string
+export interface NonRentableTypes {
+  id: number
+  section_id: number
   name: string
   status: string
-  rent: string
+  section: SectionTypes
+}
+
+export interface StallTypes {
+  id: number
+  section_id: number
+  renter_id: number
+  name: string
+  status: string
+  rent: number
   rent_type: string
-  occupancy_fee: string
+  occupancy_fee: number
   occupancy_renewal_period: string
   section: SectionTypes
   renter: RenterTypes
 }
 
 export interface RenterTypes {
-  id: string
+  id: number
   section_id: string
   stall_id: string
   name: string
@@ -123,4 +131,32 @@ export interface LogMessageTypes {
   field: string
   old_value: string
   new_value: string
+}
+
+export interface InvoiceTypes {
+  id: number
+  invoice_number: string
+  renter_id: number
+  invoice_date: string
+  due_date: string
+  type: string
+  amount: number
+  renter: RenterTypes
+  created_by: string
+  generated: boolean
+}
+
+export interface RenterDropdownTypes {
+  label: string
+  value: number
+}
+
+export interface SectionDropdownTypes {
+  label: string
+  value: number
+}
+
+export interface LocationDropdownTypes {
+  location_label: string
+  sections: SectionDropdownTypes[]
 }

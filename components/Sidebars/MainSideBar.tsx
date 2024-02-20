@@ -1,16 +1,16 @@
-"use client";
+'use client'
 
-import { Cog6ToothIcon } from "@heroicons/react/24/solid";
-import Link from "next/link";
-import React from "react";
-import { usePathname } from "next/navigation";
-import { useSupabase } from "@/context/SupabaseProvider";
-import { superAdmins } from "@/constants";
-import { UserIcon, UsersIcon } from "@heroicons/react/20/solid";
+import { Cog6ToothIcon } from '@heroicons/react/24/solid'
+import Link from 'next/link'
+import React from 'react'
+import { usePathname } from 'next/navigation'
+import { useSupabase } from '@/context/SupabaseProvider'
+import { superAdmins } from '@/constants'
+import { UserIcon, UsersIcon } from '@heroicons/react/20/solid'
 
 export default function MainSideBar() {
-  const currentRoute = usePathname();
-  const { session } = useSupabase();
+  const currentRoute = usePathname()
+  const { session } = useSupabase()
 
   return (
     <>
@@ -25,9 +25,8 @@ export default function MainSideBar() {
           <Link
             href="/"
             className={`app__menu_link ${
-              currentRoute === "/asdf" ? "app_menu_link_active" : ""
-            }`}
-          >
+              currentRoute === '/asdf' ? 'app_menu_link_active' : ''
+            }`}>
             <span className="flex-1 ml-3 whitespace-nowrap">Collections</span>
           </Link>
         </li>
@@ -35,9 +34,8 @@ export default function MainSideBar() {
           <Link
             href="/invoices"
             className={`app__menu_link ${
-              currentRoute === "/invoices" ? "app_menu_link_active" : ""
-            }`}
-          >
+              currentRoute === '/invoices' ? 'app_menu_link_active' : ''
+            }`}>
             <span className="flex-1 ml-3 whitespace-nowrap">Invoices</span>
           </Link>
         </li>
@@ -51,22 +49,37 @@ export default function MainSideBar() {
         </li>
         <li>
           <Link
-            href="/"
+            href="/renters"
             className={`app__menu_link ${
-              currentRoute === "/asdf" ? "app_menu_link_active" : ""
-            }`}
-          >
-            <span className="flex-1 ml-3 whitespace-nowrap">Walk-In</span>
+              currentRoute === '/renters' ? 'app_menu_link_active' : ''
+            }`}>
+            <span className="flex-1 ml-3 whitespace-nowrap">Renters</span>
+          </Link>
+        </li>
+      </ul>
+      <ul className="mt-6 space-y-2 border-gray-700">
+        <li>
+          <div className="flex items-center text-gray-500 items-centers space-x-1 px-2">
+            <UsersIcon className="w-4 h-4" />
+            <span>Products & Services</span>
+          </div>
+        </li>
+        <li>
+          <Link
+            href="/rentables"
+            className={`app__menu_link ${
+              currentRoute === '/rentables' ? 'app_menu_link_active' : ''
+            }`}>
+            <span className="flex-1 ml-3 whitespace-nowrap">Rentables</span>
           </Link>
         </li>
         <li>
           <Link
-            href="/renters"
+            href="/nonrentables"
             className={`app__menu_link ${
-              currentRoute === "/renters" ? "app_menu_link_active" : ""
-            }`}
-          >
-            <span className="flex-1 ml-3 whitespace-nowrap">Renters</span>
+              currentRoute === '/nonrentables' ? 'app_menu_link_active' : ''
+            }`}>
+            <span className="flex-1 ml-3 whitespace-nowrap">Non-Rentables</span>
           </Link>
         </li>
       </ul>
@@ -81,9 +94,8 @@ export default function MainSideBar() {
           <Link
             href="/locations"
             className={`app__menu_link ${
-              currentRoute === "/locations" ? "app_menu_link_active" : ""
-            }`}
-          >
+              currentRoute === '/locations' ? 'app_menu_link_active' : ''
+            }`}>
             <span className="flex-1 ml-3 whitespace-nowrap">Locations</span>
           </Link>
         </li>
@@ -91,29 +103,17 @@ export default function MainSideBar() {
           <Link
             href="/sections"
             className={`app__menu_link ${
-              currentRoute === "/sections" ? "app_menu_link_active" : ""
-            }`}
-          >
+              currentRoute === '/sections' ? 'app_menu_link_active' : ''
+            }`}>
             <span className="flex-1 ml-3 whitespace-nowrap">Sections</span>
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/stalls"
-            className={`app__menu_link ${
-              currentRoute === "/stalls" ? "app_menu_link_active" : ""
-            }`}
-          >
-            <span className="flex-1 ml-3 whitespace-nowrap">Stalls</span>
           </Link>
         </li>
         <li>
           <Link
             href="/accounts"
             className={`app__menu_link ${
-              currentRoute === "/accounts" ? "app_menu_link_active" : ""
-            }`}
-          >
+              currentRoute === '/accounts' ? 'app_menu_link_active' : ''
+            }`}>
             <span className="flex-1 ml-3 whitespace-nowrap">User Accounts</span>
           </Link>
         </li>
@@ -132,11 +132,10 @@ export default function MainSideBar() {
             <Link
               href="/settings/system"
               className={`app__menu_link ${
-                currentRoute === "/settings/system"
-                  ? "app_menu_link_active"
-                  : ""
-              }`}
-            >
+                currentRoute === '/settings/system'
+                  ? 'app_menu_link_active'
+                  : ''
+              }`}>
               <span className="flex-1 ml-3 whitespace-nowrap">
                 System Access
               </span>
@@ -146,16 +145,15 @@ export default function MainSideBar() {
             <Link
               href="/settings/errorlogs"
               className={`app__menu_link ${
-                currentRoute === "/settings/errorlogs"
-                  ? "app_menu_link_active"
-                  : ""
-              }`}
-            >
+                currentRoute === '/settings/errorlogs'
+                  ? 'app_menu_link_active'
+                  : ''
+              }`}>
               <span className="flex-1 ml-3 whitespace-nowrap">Error Logs</span>
             </Link>
           </li>
         </ul>
       )}
     </>
-  );
+  )
 }

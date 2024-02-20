@@ -47,23 +47,18 @@ import { fetchLocations } from '@/utils/fetchApi'
 
 interface FilterTypes {
   setFilterSection: (id: number | null) => void
-  setFilterRenter: (id: number | null) => void
   setFilterStatus: (status: string) => void
 }
 
 interface FilterForm {
-  renter_id: number | null
+  renter: number | null
   status: string
   section_id: number | null
+  date: string
 }
 
-const Filters = ({
-  setFilterSection,
-  setFilterStatus,
-  setFilterRenter,
-}: FilterTypes) => {
+const Filters = ({ setFilterSection, setFilterStatus }: FilterTypes) => {
   const [locations, setLocations] = useState<LocationDropdownTypes[] | []>([])
-  const [renters, setRenters] = useState<RenterDropdownTypes[] | []>([])
 
   const form = useForm<FilterForm>({
     defaultValues: { status: 'All' },
@@ -72,7 +67,6 @@ const Filters = ({
 
   const onSubmit = async (data: FilterForm) => {
     setFilterSection(data.section_id)
-    setFilterRenter(data.renter_id)
     setFilterStatus(data.status)
   }
 
@@ -80,7 +74,6 @@ const Filters = ({
   const handleClear = () => {
     form.reset()
     setFilterSection(null)
-    setFilterRenter(null)
     setFilterStatus('')
   }
 
@@ -114,17 +107,6 @@ const Filters = ({
         setLocations(locationsArray)
       }
     })()
-
-    // Fetch renters from context api
-    ;(async () => {
-      const rentersArray: RenterDropdownTypes[] = []
-      if (rentersData) {
-        rentersData.forEach((item: RenterTypes) => {
-          rentersArray.push({ label: item.name, value: item.id })
-        })
-      }
-      setRenters(rentersArray)
-    })()
   }, [])
 
   return (
@@ -132,69 +114,6 @@ const Filters = ({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="items-center space-x-2 space-y-1">
-            <div className="items-center inline-flex app__filter_field_container">
-              <FormField
-                control={form.control}
-                name="renter_id"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col items-start justify-start">
-                    <FormLabel className="app__form_label">
-                      Search Name
-                    </FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              'justify-between',
-                              !field.value && 'text-muted-foreground'
-                            )}>
-                            {field.value
-                              ? renters.find(
-                                  (renter) => renter.value === field.value
-                                )?.label
-                              : 'Search Renter Name'}
-                            <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="h-[300px]">
-                        <Command>
-                          <CommandInput
-                            placeholder="Search Renter..."
-                            className="h-9"
-                          />
-                          <CommandEmpty>Name not found.</CommandEmpty>
-                          <CommandGroup>
-                            {renters.map((renter) => (
-                              <CommandItem
-                                value={renter.label}
-                                key={renter.value}
-                                onSelect={() => {
-                                  form.setValue('renter_id', renter.value)
-                                }}>
-                                {renter.label}
-                                <CheckIcon
-                                  className={cn(
-                                    'ml-auto h-4 w-4',
-                                    renter.value === field.value
-                                      ? 'opacity-100'
-                                      : 'opacity-0'
-                                  )}
-                                />
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
             <div className="items-center inline-flex app__filter_field_container">
               <FormField
                 control={form.control}

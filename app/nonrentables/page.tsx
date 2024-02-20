@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
-import { fetchSections } from '@/utils/fetchApi'
+import { fetchNonRentables } from '@/utils/fetchApi'
 import React, { Fragment, useEffect, useState } from 'react'
 import { Menu, Transition } from '@headlessui/react'
 import {
@@ -15,33 +15,43 @@ import {
   CustomButton,
   ConfirmModal,
   MainSideBar,
+  LogsModal,
 } from '@/components/index'
 import { superAdmins } from '@/constants'
 import Filters from './Filters'
 import { useFilter } from '@/context/FilterContext'
 import { useSupabase } from '@/context/SupabaseProvider'
 // Types
-import type { SectionTypes } from '@/types/index'
+import type { NonRentableTypes } from '@/types/index'
 
 // Redux imports
 import { useSelector, useDispatch } from 'react-redux'
 import { updateList } from '@/GlobalRedux/Features/listSlice'
 import { updateResultCounter } from '@/GlobalRedux/Features/resultsCounterSlice'
-import AddEditModal from './AddEditModal'
-import { ChevronDownIcon, PencilSquareIcon } from '@heroicons/react/20/solid'
+import {
+  ChevronDownIcon,
+  EyeIcon,
+  PencilSquareIcon,
+} from '@heroicons/react/20/solid'
+import { handleLogChanges } from '@/utils/text-helper'
+import AddOrEditModal from './AddOrEditModal'
 
 const Page: React.FC = () => {
   const [loading, setLoading] = useState(false)
-  const [list, setList] = useState<SectionTypes[]>([])
+  const [list, setList] = useState<NonRentableTypes[]>([])
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  const [editData, setEditData] = useState<SectionTypes | null>(null)
+  const [editData, setEditData] = useState<NonRentableTypes | null>(null)
+  const [reFetch, setReFetch] = useState(false)
 
-  const [filterKeyword, setFilterKeyword] = useState<string>('')
+  const [filterSection, setFilterSection] = useState<number | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('')
 
   const [perPageCount, setPerPageCount] = useState<number>(10)
+
+  // change logs modal
+  const [showLogsModal, setShowLogsModal] = useState(false)
 
   // Confirm modal
   const [showConfirmModal, setShowConfirmModal] = useState('')
@@ -59,8 +69,8 @@ const Page: React.FC = () => {
     setLoading(true)
 
     try {
-      const result = await fetchSections(
-        { filterKeyword, filterStatus },
+      const result = await fetchNonRentables(
+        { filterSection, filterStatus },
         perPageCount,
         0
       )
@@ -87,8 +97,8 @@ const Page: React.FC = () => {
     setLoading(true)
 
     try {
-      const result = await fetchSections(
-        { filterKeyword, filterStatus },
+      const result = await fetchNonRentables(
+        { filterSection, filterStatus },
         perPageCount,
         list.length
       )
@@ -116,7 +126,7 @@ const Page: React.FC = () => {
     setEditData(null)
   }
 
-  const handleEdit = (item: SectionTypes) => {
+  const handleEdit = (item: NonRentableTypes) => {
     setShowAddModal(true)
     setEditData(item)
   }
@@ -124,23 +134,23 @@ const Page: React.FC = () => {
   // display confirm modal
   const HandleConfirm = (action: string, id: number) => {
     if (action === 'Activate') {
-      setConfirmMessage('Are you sure you want to activate this section?')
+      setConfirmMessage('Are you sure you want to activate this stall?')
       setSelectedId(id)
     }
     if (action === 'Deactivate') {
-      setConfirmMessage('Are you sure you want to deactivate this section?')
+      setConfirmMessage('Are you sure you want to deactivate this stall?')
       setSelectedId(id)
     }
     setShowConfirmModal(action)
   }
 
   // based from confirm modal
-  const HandleOnConfirm = async () => {
+  const HandleOnConfirm = () => {
     if (showConfirmModal === 'Activate') {
-      await handleActiveChange()
+      void handleActiveChange()
     }
     if (showConfirmModal === 'Deactivate') {
-      await handleInactiveChange()
+      void handleInactiveChange()
     }
     setShowConfirmModal('')
     setConfirmMessage('')
@@ -158,11 +168,20 @@ const Page: React.FC = () => {
   const handleInactiveChange = async () => {
     try {
       const { error } = await supabase
-        .from('ceedo_sections')
+        .from('ceedo_stalls')
         .update({ status: 'Inactive' })
         .eq('id', selectedId)
 
       if (error) throw new Error(error.message)
+
+      // Log changes
+      handleLogChanges(
+        { status: 'Inactive' },
+        { status: 'Active' },
+        'stall_id',
+        selectedId,
+        session.user.id
+      )
 
       // Update data in redux
       const items = [...globallist]
@@ -180,11 +199,20 @@ const Page: React.FC = () => {
   const handleActiveChange = async () => {
     try {
       const { error } = await supabase
-        .from('ceedo_sections')
+        .from('ceedo_stalls')
         .update({ status: 'Active' })
         .eq('id', selectedId)
 
       if (error) throw new Error(error.message)
+
+      // Log changes
+      handleLogChanges(
+        { status: 'Active' },
+        { status: 'Inactive' },
+        'stall_id',
+        selectedId,
+        session.user.id
+      )
 
       // Update data in redux
       const items = [...globallist]
@@ -207,7 +235,7 @@ const Page: React.FC = () => {
   useEffect(() => {
     setList([])
     void fetchData()
-  }, [filterKeyword, perPageCount, filterStatus])
+  }, [filterSection, perPageCount, filterStatus, reFetch])
 
   const isDataEmpty = !Array.isArray(list) || list.length < 1 || !list
 
@@ -224,10 +252,10 @@ const Page: React.FC = () => {
       <div className="app__main">
         <div>
           <div className="app__title">
-            <Title title="Sections" />
+            <Title title="Non-Rentables" />
             <CustomButton
               containerStyles="app__btn_green"
-              title="Add New Section"
+              title="Add New Non-Rentable"
               btnType="button"
               handleClick={handleAdd}
             />
@@ -237,7 +265,7 @@ const Page: React.FC = () => {
           <div className="app__filters">
             <Filters
               setFilterStatus={setFilterStatus}
-              setFilterKeyword={setFilterKeyword}
+              setFilterSection={setFilterSection}
             />
           </div>
 
@@ -254,16 +282,18 @@ const Page: React.FC = () => {
             <table className="app__table">
               <thead className="app__thead">
                 <tr>
-                  <th className="hidden md:table-cell app__th pl-4"></th>
-                  <th className="hidden md:table-cell app__th">Name</th>
-                  <th className="hidden md:table-cell app__th">Location</th>
+                  <th className="app__th pl-4"></th>
+                  <th className="app__th">Name</th>
+                  <th className="hidden md:table-cell app__th">
+                    Section/Location
+                  </th>
                   <th className="hidden md:table-cell app__th">Status</th>
                   <th className="hidden md:table-cell app__th"></th>
                 </tr>
               </thead>
               <tbody>
                 {!isDataEmpty &&
-                  list.map((item: SectionTypes, index) => (
+                  list.map((item: NonRentableTypes, index) => (
                     <tr
                       key={index}
                       className="app__tr">
@@ -298,14 +328,73 @@ const Page: React.FC = () => {
                                     <span>Edit</span>
                                   </div>
                                 </Menu.Item>
+                                <Menu.Item>
+                                  <div
+                                    onClick={() => {
+                                      setShowLogsModal(true)
+                                      setSelectedId(item.id)
+                                    }}
+                                    className="app__dropdown_item">
+                                    <EyeIcon className="w-4 h-4" />
+                                    <span>View Change Logs</span>
+                                  </div>
+                                </Menu.Item>
                               </div>
                             </Menu.Items>
                           </Transition>
                         </Menu>
                       </td>
-                      <td className="app__th_firstcol">{item.name}</td>
-                      <td className="app__td">{item.location?.name}</td>
-                      <td className="app__td">
+                      <th className="app__th_firstcol">
+                        <span>{item.name}</span>
+                        {/* Mobile View */}
+                        <div className="md:hidden app__td_mobile">
+                          <div>
+                            <span className="app_td_mobile_label">
+                              Location:
+                            </span>{' '}
+                            {item.section?.name} /{' '}
+                            {item.section?.location?.name}
+                          </div>
+                          <div>
+                            {item.status === 'Inactive' ? (
+                              <span className="app__status_container_red">
+                                Inactive
+                              </span>
+                            ) : (
+                              <span className="app__status_container_green">
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            {item.status === 'Active' && (
+                              <CustomButton
+                                containerStyles="app__btn_red_xs"
+                                title="Deactivate"
+                                btnType="button"
+                                handleClick={() =>
+                                  HandleConfirm('Deactivate', item.id)
+                                }
+                              />
+                            )}
+                            {item.status === 'Inactive' && (
+                              <CustomButton
+                                containerStyles="app__btn_green_xs"
+                                title="Activate"
+                                btnType="button"
+                                handleClick={() =>
+                                  HandleConfirm('Activate', item.id)
+                                }
+                              />
+                            )}
+                          </div>
+                        </div>
+                        {/* End - Mobile View */}
+                      </th>
+                      <td className="hidden md:table-cell app__td">
+                        {item.section?.name} / {item.section?.location?.name}
+                      </td>
+                      <td className="hidden md:table-cell app__td">
                         {item.status === 'Inactive' ? (
                           <span className="app__status_container_red">
                             Inactive
@@ -316,7 +405,7 @@ const Page: React.FC = () => {
                           </span>
                         )}
                       </td>
-                      <td className="app__td">
+                      <td className="hidden md:table-cell app__td">
                         {item.status === 'Active' && (
                           <CustomButton
                             containerStyles="app__btn_red_xs"
@@ -343,7 +432,7 @@ const Page: React.FC = () => {
                 {loading && (
                   <TableRowLoading
                     cols={5}
-                    rows={2}
+                    rows={3}
                   />
                 )}
               </tbody>
@@ -361,7 +450,8 @@ const Page: React.FC = () => {
       </div>
       {/* Add/Edit Modal */}
       {showAddModal && (
-        <AddEditModal
+        <AddOrEditModal
+          refetchData={() => setReFetch(!reFetch)}
           editData={editData}
           hideModal={() => setShowAddModal(false)}
         />
@@ -374,6 +464,17 @@ const Page: React.FC = () => {
           message={confirmMessage}
           onConfirm={HandleOnConfirm}
           onCancel={handleOnCancel}
+        />
+      )}
+      {/* Logs Modal */}
+      {showLogsModal && selectedId && (
+        <LogsModal
+          refCol="stall_id"
+          refValue={selectedId}
+          onClose={() => {
+            setShowLogsModal(false)
+            setSelectedId(null)
+          }}
         />
       )}
     </>

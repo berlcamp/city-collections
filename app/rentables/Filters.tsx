@@ -2,7 +2,14 @@ import React, { useEffect, useState } from 'react'
 import { CustomButton } from '@/components/index'
 import { useForm } from 'react-hook-form'
 import { useSupabase } from '@/context/SupabaseProvider'
-import { RenterDropdownTypes, RenterTypes } from '@/types'
+import {
+  LocationDropdownTypes,
+  LocationTypes,
+  RenterDropdownTypes,
+  RenterTypes,
+  SectionDropdownTypes,
+  SectionTypes,
+} from '@/types'
 import {
   Command,
   CommandEmpty,
@@ -21,7 +28,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
@@ -34,46 +43,78 @@ import { CaretSortIcon } from '@radix-ui/react-icons'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/utils/shadcn'
 import { CheckIcon } from 'lucide-react'
+import { fetchLocations } from '@/utils/fetchApi'
 
 interface FilterTypes {
+  setFilterSection: (id: number | null) => void
   setFilterRenter: (id: number | null) => void
   setFilterStatus: (status: string) => void
-  setFilterDate: (date: string) => void
 }
 
 interface FilterForm {
-  renter: number | null
+  renter_id: number | null
   status: string
-  date: string
+  section_id: number | null
 }
 
 const Filters = ({
-  setFilterRenter,
+  setFilterSection,
   setFilterStatus,
-  setFilterDate,
+  setFilterRenter,
 }: FilterTypes) => {
+  const [locations, setLocations] = useState<LocationDropdownTypes[] | []>([])
   const [renters, setRenters] = useState<RenterDropdownTypes[] | []>([])
 
   const form = useForm<FilterForm>({
-    defaultValues: { date: 'Last 12 Months', status: 'All' },
+    defaultValues: { status: 'All' },
   })
   const { renters: rentersData } = useSupabase()
 
   const onSubmit = async (data: FilterForm) => {
-    setFilterRenter(data.renter)
+    setFilterSection(data.section_id)
+    setFilterRenter(data.renter_id)
     setFilterStatus(data.status)
-    setFilterDate(data.date)
   }
 
   // clear all filters
   const handleClear = () => {
     form.reset()
+    setFilterSection(null)
     setFilterRenter(null)
     setFilterStatus('')
-    setFilterDate('')
   }
 
   useEffect(() => {
+    // Fetch Sections
+    ;(async () => {
+      const result: any = await fetchLocations({}, 300, 0)
+      const locationsArray: any = []
+      if (result.data.length > 0) {
+        // Loop all locations
+        result.data.forEach((location: LocationTypes) => {
+          if (location.ceedo_sections.length > 0) {
+            const sectionsArray: SectionDropdownTypes[] = []
+            // Loop all sections of location
+            location.ceedo_sections.forEach((section: SectionTypes) => {
+              if (section.status === 'Active') {
+                sectionsArray.push({
+                  label: section.name,
+                  value: section.id,
+                })
+              }
+            })
+
+            // Add to location array in order to display to Select Group Dropdown
+            locationsArray.push({
+              location_label: location.name,
+              sections: sectionsArray,
+            })
+          }
+        })
+        setLocations(locationsArray)
+      }
+    })()
+
     // Fetch renters from context api
     ;(async () => {
       const rentersArray: RenterDropdownTypes[] = []
@@ -94,7 +135,7 @@ const Filters = ({
             <div className="items-center inline-flex app__filter_field_container">
               <FormField
                 control={form.control}
-                name="renter"
+                name="renter_id"
                 render={({ field }) => (
                   <FormItem className="flex flex-col items-start justify-start">
                     <FormLabel className="app__form_label">Renter</FormLabel>
@@ -130,7 +171,7 @@ const Filters = ({
                                 value={renter.label}
                                 key={renter.value}
                                 onSelect={() => {
-                                  form.setValue('renter', renter.value)
+                                  form.setValue('renter_id', renter.value)
                                 }}>
                                 {renter.label}
                                 <CheckIcon
@@ -147,6 +188,48 @@ const Filters = ({
                         </Command>
                       </PopoverContent>
                     </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="items-center inline-flex app__filter_field_container">
+              <FormField
+                control={form.control}
+                name="section_id"
+                render={({ field }) => (
+                  <FormItem className="w-[340px] flex flex-col items-start justify-start">
+                    <FormLabel className="app__form_label">Section</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value?.toString()}
+                      defaultValue={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          {/* Workaround for reset issue: https://github.com/shadcn-ui/ui/issues/549#issuecomment-1693745585 */}
+                          {field.value ? (
+                            <SelectValue placeholder="Select Section" />
+                          ) : (
+                            'Select Section'
+                          )}
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {locations.map((location, i) => (
+                          <SelectGroup key={i}>
+                            <SelectLabel>{location.location_label}</SelectLabel>
+                            {location.sections.map((section, j) => (
+                              <SelectItem
+                                key={j}
+                                value={section.value.toString()}
+                                className="pl-8">
+                                {section.label}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -175,73 +258,8 @@ const Filters = ({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="All">All</SelectItem>
-                        <SelectItem value="Unpaid">Unpaid</SelectItem>
-                        <SelectItem
-                          value="Unpaid Overdue"
-                          className="pl-10">
-                          - Overdue
-                        </SelectItem>
-                        <SelectItem
-                          value="Unpaid Not Due"
-                          className="pl-10">
-                          - Not Due
-                        </SelectItem>
-                        <SelectItem value="Partially Paid">
-                          Partially Paid
-                        </SelectItem>
-                        <SelectItem
-                          value="Partially Paid Overdue"
-                          className="pl-10">
-                          - Overdue
-                        </SelectItem>
-                        <SelectItem
-                          value="Partially Paid Not Due"
-                          className="pl-10">
-                          - Not Due
-                        </SelectItem>
-                        <SelectItem value="Fully Paid">Fully Paid</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="items-center inline-flex app__filter_field_container">
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="w-[240px] flex flex-col items-start justify-start">
-                    <FormLabel className="app__form_label">
-                      Invoice Date
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          {/* Workaround for reset issue: https://github.com/shadcn-ui/ui/issues/549#issuecomment-1693745585 */}
-                          {field.value ? (
-                            <SelectValue placeholder="Select Invoice Date" />
-                          ) : (
-                            'Select Invoice Date'
-                          )}
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Today">Today</SelectItem>
-                        <SelectItem value="This Week">This Week</SelectItem>
-                        <SelectItem value="Last Week">Last Week</SelectItem>
-                        <SelectItem value="This Month">This Month</SelectItem>
-                        <SelectItem value="Last Month">Last Month</SelectItem>
-                        <SelectItem value="Last 6 Months">
-                          Last 6 Months
-                        </SelectItem>
-                        <SelectItem value="Last 12 Months">
-                          Last 12 Months
-                        </SelectItem>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

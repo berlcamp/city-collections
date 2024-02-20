@@ -12,7 +12,7 @@ import { UserBlock } from '@/components/index'
 interface ModalProps {
   onClose: () => void
   refCol: string
-  refValue: string
+  refValue: number
 }
 
 export default function LogsModal({ refCol, refValue, onClose }: ModalProps) {

@@ -1,9 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-"use client";
+'use client'
 
-import { fetchStalls } from "@/utils/fetchApi";
-import React, { Fragment, useEffect, useState } from "react";
-import { Menu, Transition } from "@headlessui/react";
+import { fetchStalls } from '@/utils/fetchApi'
+import React, { Fragment, useEffect, useState } from 'react'
+import { Menu, Transition } from '@headlessui/react'
 import {
   Sidebar,
   PerPage,
@@ -16,66 +16,67 @@ import {
   ConfirmModal,
   MainSideBar,
   LogsModal,
-} from "@/components/index";
-import { superAdmins } from "@/constants";
-import Filters from "./Filters";
-import { useFilter } from "@/context/FilterContext";
-import { useSupabase } from "@/context/SupabaseProvider";
+} from '@/components/index'
+import { superAdmins } from '@/constants'
+import Filters from './Filters'
+import { useFilter } from '@/context/FilterContext'
+import { useSupabase } from '@/context/SupabaseProvider'
 // Types
-import type { StallTypes } from "@/types/index";
+import type { StallTypes } from '@/types/index'
 
 // Redux imports
-import { useSelector, useDispatch } from "react-redux";
-import { updateList } from "@/GlobalRedux/Features/listSlice";
-import { updateResultCounter } from "@/GlobalRedux/Features/resultsCounterSlice";
-import AddEditModal from "./AddEditModal";
+import { useSelector, useDispatch } from 'react-redux'
+import { updateList } from '@/GlobalRedux/Features/listSlice'
+import { updateResultCounter } from '@/GlobalRedux/Features/resultsCounterSlice'
 import {
   ChevronDownIcon,
   EyeIcon,
   PencilSquareIcon,
-} from "@heroicons/react/20/solid";
-import { handleLogChanges } from "@/utils/text-helper";
+} from '@heroicons/react/20/solid'
+import { handleLogChanges } from '@/utils/text-helper'
+import AddOrEditModal from './AddOrEditModal'
 
 const Page: React.FC = () => {
-  const [loading, setLoading] = useState(false);
-  const [list, setList] = useState<StallTypes[]>([]);
+  const [loading, setLoading] = useState(false)
+  const [list, setList] = useState<StallTypes[]>([])
 
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedId, setSelectedId] = useState<string>("");
-  const [editData, setEditData] = useState<StallTypes | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [editData, setEditData] = useState<StallTypes | null>(null)
 
-  const [filterKeyword, setFilterKeyword] = useState<string>("");
-  const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterSection, setFilterSection] = useState<number | null>(null)
+  const [filterRenter, setFilterRenter] = useState<number | null>(null)
+  const [filterStatus, setFilterStatus] = useState<string>('')
 
-  const [perPageCount, setPerPageCount] = useState<number>(10);
+  const [perPageCount, setPerPageCount] = useState<number>(10)
 
   // change logs modal
-  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [showLogsModal, setShowLogsModal] = useState(false)
 
   // Confirm modal
-  const [showConfirmModal, setShowConfirmModal] = useState("");
-  const [confirmMessage, setConfirmMessage] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState('')
+  const [confirmMessage, setConfirmMessage] = useState('')
 
   // Redux staff
-  const globallist = useSelector((state: any) => state.list.value);
-  const resultsCounter = useSelector((state: any) => state.results.value);
-  const dispatch = useDispatch();
+  const globallist = useSelector((state: any) => state.list.value)
+  const resultsCounter = useSelector((state: any) => state.results.value)
+  const dispatch = useDispatch()
 
-  const { supabase, session } = useSupabase();
-  const { setToast, hasAccess } = useFilter();
+  const { supabase, session } = useSupabase()
+  const { setToast, hasAccess } = useFilter()
 
   const fetchData = async () => {
-    setLoading(true);
+    setLoading(true)
 
     try {
       const result = await fetchStalls(
-        { filterKeyword, filterStatus },
+        { filterSection, filterRenter, filterStatus },
         perPageCount,
         0
-      );
+      )
 
       // update the list in redux
-      dispatch(updateList(result.data));
+      dispatch(updateList(result.data))
 
       // Updating showing text in redux
       dispatch(
@@ -83,28 +84,28 @@ const Page: React.FC = () => {
           showing: result.data.length,
           results: result.count ? result.count : 0,
         })
-      );
+      )
     } catch (e) {
-      console.error(e);
+      console.error(e)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   // Append data to existing list whenever 'show more' button is clicked
   const handleShowMore = async () => {
-    setLoading(true);
+    setLoading(true)
 
     try {
       const result = await fetchStalls(
-        { filterKeyword, filterStatus },
+        { filterSection, filterRenter, filterStatus },
         perPageCount,
         list.length
-      );
+      )
 
       // update the list in redux
-      const newList = [...list, ...result.data];
-      dispatch(updateList(newList));
+      const newList = [...list, ...result.data]
+      dispatch(updateList(newList))
 
       // Updating showing text in redux
       dispatch(
@@ -112,135 +113,135 @@ const Page: React.FC = () => {
           showing: newList.length,
           results: result.count ? result.count : 0,
         })
-      );
+      )
     } catch (e) {
-      console.error(e);
+      console.error(e)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleAdd = () => {
-    setShowAddModal(true);
-    setEditData(null);
-  };
+    setShowAddModal(true)
+    setEditData(null)
+  }
 
   const handleEdit = (item: StallTypes) => {
-    setShowAddModal(true);
-    setEditData(item);
-  };
+    setShowAddModal(true)
+    setEditData(item)
+  }
 
   // display confirm modal
-  const HandleConfirm = (action: string, id: string) => {
-    if (action === "Activate") {
-      setConfirmMessage("Are you sure you want to activate this stall?");
-      setSelectedId(id);
+  const HandleConfirm = (action: string, id: number) => {
+    if (action === 'Activate') {
+      setConfirmMessage('Are you sure you want to activate this stall?')
+      setSelectedId(id)
     }
-    if (action === "Deactivate") {
-      setConfirmMessage("Are you sure you want to deactivate this stall?");
-      setSelectedId(id);
+    if (action === 'Deactivate') {
+      setConfirmMessage('Are you sure you want to deactivate this stall?')
+      setSelectedId(id)
     }
-    setShowConfirmModal(action);
-  };
+    setShowConfirmModal(action)
+  }
 
   // based from confirm modal
   const HandleOnConfirm = () => {
-    if (showConfirmModal === "Activate") {
-      void handleActiveChange();
+    if (showConfirmModal === 'Activate') {
+      void handleActiveChange()
     }
-    if (showConfirmModal === "Deactivate") {
-      void handleInactiveChange();
+    if (showConfirmModal === 'Deactivate') {
+      void handleInactiveChange()
     }
-    setShowConfirmModal("");
-    setConfirmMessage("");
-    setSelectedId("");
-  };
+    setShowConfirmModal('')
+    setConfirmMessage('')
+    setSelectedId(null)
+  }
 
   // based from confirm modal
   const handleOnCancel = () => {
     // hide the modal
-    setShowConfirmModal("");
-    setConfirmMessage("");
-    setSelectedId("");
-  };
+    setShowConfirmModal('')
+    setConfirmMessage('')
+    setSelectedId(null)
+  }
 
   const handleInactiveChange = async () => {
     try {
       const { error } = await supabase
-        .from("ceedo_stalls")
-        .update({ status: "Inactive" })
-        .eq("id", selectedId);
+        .from('ceedo_stalls')
+        .update({ status: 'Inactive' })
+        .eq('id', selectedId)
 
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(error.message)
 
       // Log changes
       handleLogChanges(
-        { status: "Inactive" },
-        { status: "Active" },
-        "stall_id",
+        { status: 'Inactive' },
+        { status: 'Active' },
+        'stall_id',
         selectedId,
         session.user.id
-      );
+      )
 
       // Update data in redux
-      const items = [...globallist];
-      const foundIndex = items.findIndex((x) => x.id === selectedId);
-      items[foundIndex] = { ...items[foundIndex], status: "Inactive" };
-      dispatch(updateList(items));
+      const items = [...globallist]
+      const foundIndex = items.findIndex((x) => x.id === selectedId)
+      items[foundIndex] = { ...items[foundIndex], status: 'Inactive' }
+      dispatch(updateList(items))
 
       // pop up the success message
-      setToast("success", "Successfully saved.");
+      setToast('success', 'Successfully saved.')
     } catch (e) {
-      console.error(e);
+      console.error(e)
     }
-  };
+  }
 
   const handleActiveChange = async () => {
     try {
       const { error } = await supabase
-        .from("ceedo_stalls")
-        .update({ status: "Active" })
-        .eq("id", selectedId);
+        .from('ceedo_stalls')
+        .update({ status: 'Active' })
+        .eq('id', selectedId)
 
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(error.message)
 
       // Log changes
       handleLogChanges(
-        { status: "Active" },
-        { status: "Inactive" },
-        "stall_id",
+        { status: 'Active' },
+        { status: 'Inactive' },
+        'stall_id',
         selectedId,
         session.user.id
-      );
+      )
 
       // Update data in redux
-      const items = [...globallist];
-      const foundIndex = items.findIndex((x) => x.id === selectedId);
-      items[foundIndex] = { ...items[foundIndex], status: "Active" };
-      dispatch(updateList(items));
+      const items = [...globallist]
+      const foundIndex = items.findIndex((x) => x.id === selectedId)
+      items[foundIndex] = { ...items[foundIndex], status: 'Active' }
+      dispatch(updateList(items))
 
       // pop up the success message
-      setToast("success", "Successfully saved.");
+      setToast('success', 'Successfully saved.')
     } catch (e) {
-      console.error(e);
+      console.error(e)
     }
-  };
+  }
 
   useEffect(() => {
-    setList(globallist);
-  }, [globallist]);
+    setList(globallist)
+  }, [globallist])
 
   // Fetch data
   useEffect(() => {
-    setList([]);
-    void fetchData();
-  }, [filterKeyword, perPageCount, filterStatus]);
+    setList([])
+    void fetchData()
+  }, [filterRenter, filterSection, perPageCount, filterStatus])
 
-  const isDataEmpty = !Array.isArray(list) || list.length < 1 || !list;
+  const isDataEmpty = !Array.isArray(list) || list.length < 1 || !list
 
   // Check access from permission settings or Super Admins
-  if (!hasAccess("collections") && !superAdmins.includes(session.user.email))
-    return <Unauthorized />;
+  if (!hasAccess('collections') && !superAdmins.includes(session.user.email))
+    return <Unauthorized />
 
   return (
     <>
@@ -251,10 +252,10 @@ const Page: React.FC = () => {
       <div className="app__main">
         <div>
           <div className="app__title">
-            <Title title="Stalls" />
+            <Title title="Rentables" />
             <CustomButton
               containerStyles="app__btn_green"
-              title="Add New Stall"
+              title="Add New Rentable"
               btnType="button"
               handleClick={handleAdd}
             />
@@ -264,7 +265,8 @@ const Page: React.FC = () => {
           <div className="app__filters">
             <Filters
               setFilterStatus={setFilterStatus}
-              setFilterKeyword={setFilterKeyword}
+              setFilterRenter={setFilterRenter}
+              setFilterSection={setFilterSection}
             />
           </div>
 
@@ -283,7 +285,9 @@ const Page: React.FC = () => {
                 <tr>
                   <th className="app__th pl-4"></th>
                   <th className="app__th">Name</th>
-                  <th className="hidden md:table-cell app__th">Location</th>
+                  <th className="hidden md:table-cell app__th">
+                    Section/Location
+                  </th>
                   <th className="hidden md:table-cell app__th">Rent</th>
                   <th className="hidden md:table-cell app__th">
                     Current Renter
@@ -295,9 +299,13 @@ const Page: React.FC = () => {
               <tbody>
                 {!isDataEmpty &&
                   list.map((item: StallTypes, index) => (
-                    <tr key={index} className="app__tr">
+                    <tr
+                      key={index}
+                      className="app__tr">
                       <td className="w-6 pl-4 app__td">
-                        <Menu as="div" className="app__menu_container">
+                        <Menu
+                          as="div"
+                          className="app__menu_container">
                           <div>
                             <Menu.Button className="app__dropdown_btn">
                               <ChevronDownIcon
@@ -314,15 +322,13 @@ const Page: React.FC = () => {
                             enterTo="transform opacity-100 scale-100"
                             leave="transition ease-in duration-75"
                             leaveFrom="transform opacity-100 scale-100"
-                            leaveTo="transform opacity-0 scale-95"
-                          >
+                            leaveTo="transform opacity-0 scale-95">
                             <Menu.Items className="app__dropdown_items">
                               <div className="py-1">
                                 <Menu.Item>
                                   <div
                                     onClick={() => handleEdit(item)}
-                                    className="app__dropdown_item"
-                                  >
+                                    className="app__dropdown_item">
                                     <PencilSquareIcon className="w-4 h-4" />
                                     <span>Edit</span>
                                   </div>
@@ -330,11 +336,10 @@ const Page: React.FC = () => {
                                 <Menu.Item>
                                   <div
                                     onClick={() => {
-                                      setShowLogsModal(true);
-                                      setSelectedId(item.id);
+                                      setShowLogsModal(true)
+                                      setSelectedId(item.id)
                                     }}
-                                    className="app__dropdown_item"
-                                  >
+                                    className="app__dropdown_item">
                                     <EyeIcon className="w-4 h-4" />
                                     <span>View Change Logs</span>
                                   </div>
@@ -351,20 +356,20 @@ const Page: React.FC = () => {
                           <div>
                             <span className="app_td_mobile_label">
                               Location:
-                            </span>{" "}
-                            {item.section?.name} /{" "}
+                            </span>{' '}
+                            {item.section?.name} /{' '}
                             {item.section?.location?.name}
                           </div>
                           <div>
-                            <span className="app_td_mobile_label">Rent:</span>{" "}
+                            <span className="app_td_mobile_label">Rent:</span>{' '}
                             {item.rent} {item.rent_type}
                           </div>
                           <div>
-                            <span className="app_td_mobile_label">Renter:</span>{" "}
+                            <span className="app_td_mobile_label">Renter:</span>{' '}
                             <span>{item.renter?.name}</span>
                           </div>
                           <div>
-                            {item.status === "Inactive" ? (
+                            {item.status === 'Inactive' ? (
                               <span className="app__status_container_red">
                                 Inactive
                               </span>
@@ -375,23 +380,23 @@ const Page: React.FC = () => {
                             )}
                           </div>
                           <div>
-                            {item.status === "Active" && (
+                            {item.status === 'Active' && (
                               <CustomButton
                                 containerStyles="app__btn_red_xs"
                                 title="Deactivate"
                                 btnType="button"
                                 handleClick={() =>
-                                  HandleConfirm("Deactivate", item.id)
+                                  HandleConfirm('Deactivate', item.id)
                                 }
                               />
                             )}
-                            {item.status === "Inactive" && (
+                            {item.status === 'Inactive' && (
                               <CustomButton
                                 containerStyles="app__btn_green_xs"
                                 title="Activate"
                                 btnType="button"
                                 handleClick={() =>
-                                  HandleConfirm("Activate", item.id)
+                                  HandleConfirm('Activate', item.id)
                                 }
                               />
                             )}
@@ -409,7 +414,7 @@ const Page: React.FC = () => {
                         <span>{item.renter?.name}</span>
                       </td>
                       <td className="hidden md:table-cell app__td">
-                        {item.status === "Inactive" ? (
+                        {item.status === 'Inactive' ? (
                           <span className="app__status_container_red">
                             Inactive
                           </span>
@@ -420,30 +425,35 @@ const Page: React.FC = () => {
                         )}
                       </td>
                       <td className="hidden md:table-cell app__td">
-                        {item.status === "Active" && (
+                        {item.status === 'Active' && (
                           <CustomButton
                             containerStyles="app__btn_red_xs"
                             title="Deactivate"
                             btnType="button"
                             handleClick={() =>
-                              HandleConfirm("Deactivate", item.id)
+                              HandleConfirm('Deactivate', item.id)
                             }
                           />
                         )}
-                        {item.status === "Inactive" && (
+                        {item.status === 'Inactive' && (
                           <CustomButton
                             containerStyles="app__btn_green_xs"
                             title="Activate"
                             btnType="button"
                             handleClick={() =>
-                              HandleConfirm("Activate", item.id)
+                              HandleConfirm('Activate', item.id)
                             }
                           />
                         )}
                       </td>
                     </tr>
                   ))}
-                {loading && <TableRowLoading cols={7} rows={3} />}
+                {loading && (
+                  <TableRowLoading
+                    cols={7}
+                    rows={3}
+                  />
+                )}
               </tbody>
             </table>
             {!loading && isDataEmpty && (
@@ -459,13 +469,13 @@ const Page: React.FC = () => {
       </div>
       {/* Add/Edit Modal */}
       {showAddModal && (
-        <AddEditModal
+        <AddOrEditModal
           editData={editData}
           hideModal={() => setShowAddModal(false)}
         />
       )}
       {/* Action Confirmation Modal */}
-      {showConfirmModal !== "" && (
+      {showConfirmModal !== '' && (
         <ConfirmModal
           header="Confirmation"
           btnText="Confirm"
@@ -475,17 +485,17 @@ const Page: React.FC = () => {
         />
       )}
       {/* Logs Modal */}
-      {showLogsModal && (
+      {showLogsModal && selectedId && (
         <LogsModal
           refCol="stall_id"
           refValue={selectedId}
           onClose={() => {
-            setShowLogsModal(false);
-            setSelectedId("");
+            setShowLogsModal(false)
+            setSelectedId(null)
           }}
         />
       )}
     </>
-  );
-};
-export default Page;
+  )
+}
+export default Page
